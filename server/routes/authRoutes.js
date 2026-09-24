@@ -2,9 +2,10 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const authMiddleware = require("../middleware/auth");
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "skillSprint-dev-secret";
+const JWT_SECRET = process.env.JWT_SECRET || "skillsprint_secret_key";
 
 // REGISTER
 router.post("/register", async (req, res) => {
@@ -17,24 +18,24 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (existingUser) {
       return res.status(400).json({
-        message: "User already exists",
+        message: "User already exists with this email",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
     });
 
     res.status(201).json({
-      message: "Registration successful",
+      message: "Registration successful! You can now log in.",
       user: {
         id: user._id,
         name: user.name,
@@ -42,10 +43,10 @@ router.post("/register", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Register error:", error);
 
     res.status(500).json({
-      message: "Server error",
+      message: "Server error during registration",
     });
   }
 });
@@ -61,7 +62,8 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(401).json({
@@ -83,8 +85,8 @@ router.post("/login", async (req, res) => {
       },
       JWT_SECRET,
       {
-        expiresIn: "1d",
-      },
+        expiresIn: "7d",
+      }
     );
 
     res.json({
@@ -97,10 +99,37 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
 
     res.status(500).json({
-      message: "Server error",
+      message: "Server error during login",
+    });
+  }
+});
+
+// GET CURRENT USER PROFILE
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("Get user error:", error);
+    res.status(500).json({
+      message: "Failed to fetch user profile",
     });
   }
 });

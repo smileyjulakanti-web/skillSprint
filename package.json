@@ -1,0 +1,14 @@
+{
+  "name": "skillsprint-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SkillSprint full-stack web application",
+  "scripts": {
+    "build": "cd client && npm install && npm run build",
+    "client:dev": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
+    "server:dev": "npm --prefix server run dev",
+    "server:start": "npm --prefix server start",
+    "start": "node server/server.js"
+  }
+}
