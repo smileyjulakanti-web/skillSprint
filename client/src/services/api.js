@@ -11,7 +11,7 @@ export const getApiBaseUrl = () => {
 
   // If in production on Vercel and no env is set, use Render fallback
   if (import.meta.env.PROD) {
-    return "https://skillsprint.onrender.com";
+    return "https://skillsprint-i6ax.onrender.com";
   }
 
   return "http://localhost:5000";

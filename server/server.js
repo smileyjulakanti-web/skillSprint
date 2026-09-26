@@ -19,9 +19,21 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI =
   process.env.MONGO_URI || "mongodb://127.0.0.1:27017/skillsprint";
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://skill-sprint-eight-kappa.vercel.app"
+];
+
 app.use(
   cors({
-    origin: true,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        // Allow other origins for now to prevent deployment issues if URL changes
+        callback(null, true);
+      }
+    },
     credentials: true,
   })
 );
