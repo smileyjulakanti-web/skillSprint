@@ -141,7 +141,7 @@ function BackendModal({ isOpen, onClose }) {
         .modal-content {
           width: 100%;
           max-width: 520px;
-          background: #0f1627;
+          background: var(--bg-surface);
           border: 1px solid var(--border-subtle);
           border-radius: var(--radius-lg);
           padding: 24px;
@@ -178,7 +178,7 @@ function BackendModal({ isOpen, onClose }) {
         }
 
         .btn-close:hover {
-          color: #fff;
+          color: var(--text-primary);
         }
 
         .modal-desc {

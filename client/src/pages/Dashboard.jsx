@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { getApiBaseUrl, authAPI } from "../services/api";
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { getApiBaseUrl, authAPI, courseAPI } from "../services/api";
 
 const INITIAL_SPRINTS = [
   {
@@ -109,6 +109,32 @@ function Dashboard({ onOpenBackendModal }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSprintId, setActiveSprintId] = useState("fs-auth");
 
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [recommendedCourses, setRecommendedCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+
+  const vantaRef = useRef(null);
+
+  useEffect(() => {
+    let vantaEffect = null;
+    if (window.VANTA && vantaRef.current) {
+      vantaEffect = window.VANTA.CELLS({
+        el: vantaRef.current,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        color1: 0x10b981,
+        color2: 0x14b8a6,
+      });
+    }
+    return () => {
+      if (vantaEffect) vantaEffect.destroy();
+    };
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -130,6 +156,38 @@ function Dashboard({ onOpenBackendModal }) {
       .catch(() => {
         // Silently continue if backend is sleeping or offline
       });
+
+    // Fetch user enrollments and recommended courses
+    const loadCoursesData = async () => {
+      try {
+        setLoadingCourses(true);
+        const [enrolledRes, allCoursesRes] = await Promise.all([
+          courseAPI.getEnrolledCourses().catch(() => ({ enrollments: [] })),
+          courseAPI.getCourses().catch(() => ({ courses: [] })),
+        ]);
+
+        const enrollments = enrolledRes.enrollments || [];
+        setEnrolledCourses(enrollments);
+
+        const enrolledIds = new Set(
+          enrollments.map((e) =>
+            e.course?._id ? e.course._id.toString() : e.course?.toString()
+          )
+        );
+
+        const all = allCoursesRes.courses || [];
+        const recommended = all.filter(
+          (c) => !enrolledIds.has(c._id.toString()) && !c.isEnrolled
+        );
+        setRecommendedCourses(recommended);
+      } catch (err) {
+        console.error("Failed to load dashboard courses:", err);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+
+    loadCoursesData();
   }, [navigate]);
 
   // Persist sprints updates
@@ -178,7 +236,7 @@ function Dashboard({ onOpenBackendModal }) {
   return (
     <div className="dashboard-container">
       {/* Hero Welcome Banner */}
-      <section className="dashboard-hero glass-panel">
+      <section className="dashboard-hero glass-panel" ref={vantaRef}>
         <div className="hero-content">
           <div className="hero-badge badge badge-emerald">
             <span>🔥</span>
@@ -234,13 +292,100 @@ function Dashboard({ onOpenBackendModal }) {
         </div>
       </section>
 
+      {/* MY LEARNING SECTION */}
+      <section className="dashboard-section my-learning-section">
+        <div className="section-title-row">
+          <div>
+            <h2>📚 My Learning</h2>
+            <p>Courses you are currently enrolled in and mastering.</p>
+          </div>
+          <Link to="/courses" className="btn btn-subtle btn-sm">
+            Explore All Courses &rarr;
+          </Link>
+        </div>
+
+        {loadingCourses ? (
+          <div className="loading-card glass-panel">
+            <span className="spinner" />
+            <span>Loading your courses...</span>
+          </div>
+        ) : enrolledCourses.length === 0 ? (
+          <div className="empty-learning-card glass-panel">
+            <div className="empty-learning-left">
+              <span className="empty-icon">🎓</span>
+              <div>
+                <h3>No enrolled courses yet</h3>
+                <p>
+                  Choose a full curriculum course to start tracking your lesson progress and earning certificates.
+                </p>
+              </div>
+            </div>
+            <Link to="/courses" className="btn btn-primary btn-sm">
+              Explore Courses ⚡
+            </Link>
+          </div>
+        ) : (
+          <div className="learning-cards-grid">
+            {enrolledCourses.map((item) => {
+              const c = item.course;
+              if (!c) return null;
+              return (
+                <div
+                  key={item.enrollmentId || c._id}
+                  className="learning-card glass-panel"
+                >
+                  <div className="learning-card-top">
+                    <span className="badge badge-cyan">
+                      {c.category || "Course"}
+                    </span>
+                    <span className="badge badge-indigo">
+                      {c.level || "Beginner"}
+                    </span>
+                    {item.completed && (
+                      <span className="badge badge-emerald">🎉 Completed</span>
+                    )}
+                  </div>
+
+                  <h3>{c.title}</h3>
+                  <p className="learning-desc">{c.description}</p>
+
+                  <div className="learning-progress-wrap">
+                    <div className="progress-info-row">
+                      <span>Progress</span>
+                      <span className="pct-val">{item.progress || 0}%</span>
+                    </div>
+                    <div className="progress-bar-bg">
+                      <div
+                        className="progress-bar-fill"
+                        style={{ width: `${item.progress || 0}%` }}
+                      />
+                    </div>
+                    <span className="completed-lessons-lbl">
+                      {item.completedLessons?.length || 0} of{" "}
+                      {c.totalLessons || c.lessons?.length || 10} lessons completed
+                    </span>
+                  </div>
+
+                  <Link
+                    to={`/courses/${c._id}/learn`}
+                    className="btn btn-primary btn-sm btn-full"
+                  >
+                    Continue Learning &rarr;
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       {/* Active Sprint Milestone Checklist */}
       {activeSprint && (
         <section id="active-tracker" className="active-sprint-section glass-panel">
           <div className="active-sprint-header">
             <div>
               <div className="active-sprint-meta">
-                <span className="badge badge-indigo">Active Focus</span>
+
                 <span className="active-category">{activeSprint.category}</span>
                 <span className="active-diff">Level: {activeSprint.difficulty}</span>
               </div>
@@ -260,7 +405,11 @@ function Dashboard({ onOpenBackendModal }) {
                 <div
                   key={m.id}
                   className={`milestone-item ${m.done ? "done" : ""}`}
-                  onClick={() => updateMilestone(activeSprint.id, m.id)}
+                  onClick={() => {
+                    updateMilestone(activeSprint.id, m.id);
+                    // Navigate to the active sprint's associated course
+                    navigate(`/courses/${activeSprint.id}/learn`);
+                  }}
                 >
                   <div className="milestone-checkbox">
                     {m.done ? "✓" : ""}
@@ -269,6 +418,48 @@ function Dashboard({ onOpenBackendModal }) {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* RECOMMENDED COURSES SECTION */}
+      {recommendedCourses.length > 0 && (
+        <section className="dashboard-section recommended-section">
+          <div className="section-title-row">
+            <div>
+              <h2>✨ Recommended Courses</h2>
+              <p>Top tracks recommended for your engineering journey.</p>
+            </div>
+            <Link to="/courses" className="btn btn-subtle btn-sm">
+              Explore Courses &rarr;
+            </Link>
+          </div>
+
+          <div className="recommended-grid">
+            {recommendedCourses.slice(0, 3).map((course) => (
+              <div key={course._id} className="recommended-card glass-panel">
+                <div className="rec-card-top">
+                  <span className="badge badge-cyan">{course.category}</span>
+                  <span className="badge badge-indigo">{course.level}</span>
+                </div>
+                <h3>{course.title}</h3>
+                <p className="rec-desc">{course.description}</p>
+                <div className="rec-meta">
+                  <span>⏱️ {course.duration}</span>
+                  <span>
+                    📚 {course.totalLessons || course.lessons?.length || 10} Lessons
+                  </span>
+                </div>
+                <div className="rec-actions">
+                  <Link
+                    to={`/courses/${course._id}`}
+                    className="btn btn-primary btn-sm btn-full"
+                  >
+                    Start Learning ⚡
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}
@@ -310,9 +501,8 @@ function Dashboard({ onOpenBackendModal }) {
           {filteredSprints.map((sprint) => (
             <div
               key={sprint.id}
-              className={`sprint-card glass-panel ${
-                activeSprintId === sprint.id ? "is-active-sprint" : ""
-              }`}
+              className={`sprint-card glass-panel ${activeSprintId === sprint.id ? "is-active-sprint" : ""
+                }`}
             >
               <div className="sprint-card-top">
                 <span className="badge badge-cyan">{sprint.category}</span>
@@ -342,9 +532,8 @@ function Dashboard({ onOpenBackendModal }) {
 
               <div className="sprint-actions">
                 <button
-                  className={`btn btn-sm ${
-                    activeSprintId === sprint.id ? "btn-primary" : "btn-secondary"
-                  } btn-full`}
+                  className={`btn btn-sm ${activeSprintId === sprint.id ? "btn-primary" : "btn-secondary"
+                    } btn-full`}
                   onClick={() => {
                     setActiveSprintId(sprint.id);
                     const el = document.getElementById("active-tracker");
@@ -387,7 +576,7 @@ function Dashboard({ onOpenBackendModal }) {
           left: 0;
           width: 100%;
           height: 3px;
-          background: linear-gradient(90deg, #6366f1, #06b6d4, #10b981);
+          background: linear-gradient(90deg, #3fa583ff, #358463ff, #59b269ff);
         }
 
         .hero-content {
@@ -399,7 +588,7 @@ function Dashboard({ onOpenBackendModal }) {
         }
 
         .highlight-text {
-          background: linear-gradient(135deg, #818cf8 0%, #06b6d4 100%);
+          background: linear-gradient(135deg, #05130fff 0%, #0e251cff 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -418,7 +607,7 @@ function Dashboard({ onOpenBackendModal }) {
         }
 
         .stat-card {
-          background: rgba(15, 23, 42, 0.65);
+          background: rgba(41, 176, 91, 0.65);
           border: 1px solid var(--border-subtle);
           border-radius: var(--radius-md);
           padding: 16px;
@@ -428,7 +617,7 @@ function Dashboard({ onOpenBackendModal }) {
 
         .stat-card:hover {
           transform: translateY(-2px);
-          border-color: rgba(99, 102, 241, 0.4);
+          border-color: rgba(70, 156, 113, 0.4);
         }
 
         .stat-icon {
@@ -441,7 +630,7 @@ function Dashboard({ onOpenBackendModal }) {
           font-family: var(--font-display);
           font-size: 1.35rem;
           font-weight: 700;
-          color: #fff;
+          color: var(--text-primary);
         }
 
         .stat-lbl {
@@ -480,19 +669,19 @@ function Dashboard({ onOpenBackendModal }) {
           height: 90px;
           border-radius: 50%;
           border: 3px solid var(--primary);
-          background: rgba(99, 102, 241, 0.1);
+          background: rgba(244, 244, 250, 0.1);
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+          box-shadow: 0 0 20px rgba(237, 237, 246, 0.2);
         }
 
         .progress-number {
           font-family: var(--font-display);
           font-size: 1.4rem;
           font-weight: 700;
-          color: #fff;
+          color: var(--text-primary);
           line-height: 1;
         }
 
@@ -529,13 +718,13 @@ function Dashboard({ onOpenBackendModal }) {
         }
 
         .milestone-item:hover {
-          background: rgba(20, 30, 55, 0.75);
-          border-color: rgba(99, 102, 241, 0.3);
+          background: rgba(226, 230, 239, 0.75);
+          border-color: rgba(235, 235, 243, 0.3);
         }
 
         .milestone-item.done {
           background: rgba(16, 185, 129, 0.08);
-          border-color: rgba(16, 185, 129, 0.3);
+          border-color: rgba(232, 241, 238, 0.3);
         }
 
         .milestone-checkbox {
@@ -550,7 +739,7 @@ function Dashboard({ onOpenBackendModal }) {
           font-weight: 800;
           color: #10b981;
           flex-shrink: 0;
-          background: rgba(0, 0, 0, 0.3);
+          background: rgba(235, 246, 236, 1);
         }
 
         .milestone-item.done .milestone-checkbox {
@@ -598,7 +787,7 @@ function Dashboard({ onOpenBackendModal }) {
         .category-pill {
           padding: 6px 14px;
           border-radius: 20px;
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(230, 239, 232, 0.05);
           border: 1px solid var(--border-subtle);
           color: var(--text-secondary);
           font-size: 0.85rem;
@@ -609,7 +798,7 @@ function Dashboard({ onOpenBackendModal }) {
         }
 
         .category-pill:hover {
-          color: #fff;
+          color: var(--text-primary);
           background: rgba(255, 255, 255, 0.1);
         }
 
@@ -617,7 +806,7 @@ function Dashboard({ onOpenBackendModal }) {
           background: var(--primary);
           color: #fff;
           border-color: var(--primary-light);
-          box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+          box-shadow: 0 0 12px rgba(10, 98, 29, 0.4);
         }
 
         /* Sprints Grid */
@@ -638,7 +827,7 @@ function Dashboard({ onOpenBackendModal }) {
 
         .sprint-card.is-active-sprint {
           border-color: var(--primary);
-          box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);
+          box-shadow: 0 0 25px rgba(139, 213, 69, 0.25);
         }
 
         .sprint-card-top {
@@ -678,14 +867,14 @@ function Dashboard({ onOpenBackendModal }) {
         .progress-bar-bg {
           width: 100%;
           height: 6px;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(21, 93, 18, 0.08);
           border-radius: 3px;
           overflow: hidden;
         }
 
         .progress-bar-fill {
           height: 100%;
-          background: linear-gradient(90deg, #6366f1, #06b6d4);
+          background: linear-gradient(90deg, #10b981, #34d399);
           border-radius: 3px;
           transition: width 0.3s ease;
         }
@@ -699,6 +888,189 @@ function Dashboard({ onOpenBackendModal }) {
         }
 
         .sprint-actions {
+          margin-top: 8px;
+        }
+
+        /* My Learning & Recommended Courses Styles */
+        .dashboard-section {
+          margin-bottom: 2.5rem;
+        }
+
+        .section-title-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 1.25rem;
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .section-title-row h2 {
+          font-size: 1.5rem;
+          margin-bottom: 4px;
+        }
+
+        .section-title-row p {
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+        }
+
+        .loading-card {
+          padding: 2rem;
+          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          color: var(--text-secondary);
+        }
+
+        .empty-learning-card {
+          padding: 1.75rem 2rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+        }
+
+        .empty-learning-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .empty-icon {
+          font-size: 2.2rem;
+        }
+
+        .empty-learning-left h3 {
+          font-size: 1.1rem;
+          margin-bottom: 2px;
+        }
+
+        .empty-learning-left p {
+          font-size: 0.88rem;
+          color: var(--text-secondary);
+        }
+
+        .learning-cards-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 1.5rem;
+        }
+
+        .learning-card {
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .learning-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 25px rgba(221, 227, 222, 0.4);
+        }
+
+        .learning-card-top {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .learning-card h3 {
+          font-size: 1.15rem;
+          line-height: 1.35;
+        }
+
+        .learning-desc {
+          font-size: 0.85rem;
+          color: var(--text-secondary);
+          line-height: 1.5;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .learning-progress-wrap {
+          margin-top: auto;
+          padding: 10px 12px;
+          background: rgba(63, 165, 138, 0.03);
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-sm);
+        }
+
+        .progress-info-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.78rem;
+          color: var(--text-secondary);
+          margin-bottom: 6px;
+        }
+
+        .pct-val {
+          font-weight: 700;
+          color: var(--accent-emerald);
+        }
+
+        .completed-lessons-lbl {
+          display: block;
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          margin-top: 6px;
+        }
+
+        .recommended-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 1.5rem;
+        }
+
+        .recommended-card {
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          transition: transform 0.2s ease;
+        }
+
+        .recommended-card:hover {
+          transform: translateY(-2px);
+        }
+
+        .rec-card-top {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .recommended-card h3 {
+          font-size: 1.15rem;
+        }
+
+        .rec-desc {
+          font-size: 0.85rem;
+          color: var(--text-secondary);
+          line-height: 1.5;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .rec-meta {
+          display: flex;
+          gap: 16px;
+          font-size: 0.8rem;
+          color: var(--text-muted);
+          margin-top: auto;
+          padding-top: 6px;
+        }
+
+        .rec-actions {
           margin-top: 8px;
         }
 

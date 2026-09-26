@@ -81,4 +81,38 @@ export const authAPI = {
   },
 };
 
+export const courseAPI = {
+  getCourses: async (params = {}) => {
+    const response = await api.get("/api/courses", { params });
+    return response.data;
+  },
+
+  getCourseById: async (id) => {
+    const response = await api.get(`/api/courses/${id}`);
+    return response.data;
+  },
+
+  enrollCourse: async (id) => {
+    const response = await api.post(`/api/courses/${id}/enroll`);
+    return response.data;
+  },
+
+  getEnrolledCourses: async () => {
+    const response = await api.get("/api/courses/enrolled");
+    return response.data;
+  },
+
+  getCourseLearn: async (id) => {
+    const response = await api.get(`/api/courses/${id}/learn`);
+    return response.data;
+  },
+
+  completeLesson: async (courseId, lessonId) => {
+    const response = await api.post(
+      `/api/courses/${courseId}/lessons/${lessonId}/complete`
+    );
+    return response.data;
+  },
+};
+
 export default api;

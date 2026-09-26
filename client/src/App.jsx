@@ -6,6 +6,10 @@ import BackendModal from "./components/BackendModal";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import CourseList from "./pages/CourseList";
+import CourseDetails from "./pages/CourseDetails";
+import LearnCourse from "./pages/LearnCourse";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   const [isBackendModalOpen, setIsBackendModalOpen] = useState(false);
@@ -26,6 +30,16 @@ function App() {
                 <Dashboard
                   onOpenBackendModal={() => setIsBackendModalOpen(true)}
                 />
+              }
+            />
+            <Route path="/courses" element={<CourseList />} />
+            <Route path="/courses/:id" element={<CourseDetails />} />
+            <Route
+              path="/courses/:id/learn"
+              element={
+                <ProtectedRoute>
+                  <LearnCourse />
+                </ProtectedRoute>
               }
             />
             {/* Catch-all redirect to dashboard/login */}
@@ -83,7 +97,7 @@ function App() {
         }
 
         .footer-link-btn:hover {
-          color: #fff;
+          color: var(--text-primary);
         }
       `}</style>
     </BrowserRouter>

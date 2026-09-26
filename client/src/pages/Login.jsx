@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authAPI, getApiBaseUrl } from "../services/api";
+import SylvaScene from "../components/SylvaScene";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -44,9 +46,10 @@ function Login() {
         localStorage.setItem("user", JSON.stringify(data.user));
       }
 
-      setSuccessMsg("Login successful! Redirecting to Dashboard...");
+      setSuccessMsg("Login successful! Redirecting...");
       setTimeout(() => {
-        navigate("/dashboard");
+        const dest = location.state?.from?.pathname || "/dashboard";
+        navigate(dest);
       }, 600);
     } catch (error) {
       console.error("Login failed:", error);
@@ -72,7 +75,8 @@ function Login() {
 
   return (
     <div className="auth-page-container">
-      <div className="auth-card glass-panel">
+      <SylvaScene />
+      <div className="auth-card glass-panel" style={{ position: "relative", zIndex: 1 }}>
         <div className="auth-header">
           <div className="auth-badge badge badge-indigo">
             <span>⚡</span>
@@ -191,7 +195,9 @@ function Login() {
 
       <style>{`
         .auth-page-container {
+          position: relative;
           min-height: calc(100vh - 68px);
+          height: calc(100vh - 68px);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -214,7 +220,7 @@ function Login() {
           left: 0;
           right: 0;
           height: 3px;
-          background: linear-gradient(90deg, #6366f1, #06b6d4, #ec4899);
+          background: linear-gradient(90deg, #10b981, #14b8a6, #34d399);
         }
 
         .auth-header {
@@ -260,7 +266,7 @@ function Login() {
         }
 
         .demo-hint-box {
-          background: rgba(255, 255, 255, 0.03);
+          background: rgba(13, 231, 97, 0.03);
           border: 1px dashed var(--border-subtle);
           border-radius: var(--radius-md);
           padding: 12px 14px;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authAPI, getApiBaseUrl } from "../services/api";
+import SylvaScene from "../components/SylvaScene";
 
 function Register() {
   const navigate = useNavigate();
@@ -17,32 +18,69 @@ function Register() {
   const [successMsg, setSuccessMsg] = useState("");
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
     if (errorMsg) setErrorMsg("");
+    if (successMsg) setSuccessMsg("");
   };
 
   const getPasswordStrength = () => {
     const pwd = formData.password;
-    if (!pwd) return { score: 0, label: "Empty", color: "#64748b" };
-    if (pwd.length < 6) return { score: 1, label: "Too short (min 6)", color: "#ef4444" };
-    if (pwd.length >= 8 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd)) {
-      return { score: 3, label: "Strong", color: "#10b981" };
+
+    if (!pwd) {
+      return {
+        score: 0,
+        label: "Empty",
+        color: "#64748b",
+      };
     }
-    return { score: 2, label: "Medium", color: "#f59e0b" };
+
+    if (pwd.length < 6) {
+      return {
+        score: 1,
+        label: "Too short (min 6)",
+        color: "#ef4444",
+      };
+    }
+
+    if (
+      pwd.length >= 8 &&
+      /[A-Z]/.test(pwd) &&
+      /[0-9]/.test(pwd)
+    ) {
+      return {
+        score: 3,
+        label: "Strong",
+        color: "#10b981",
+      };
+    }
+
+    return {
+      score: 2,
+      label: "Medium",
+      color: "#f59e0b",
+    };
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
+    const name = formData.name.trim();
+    const email = formData.email.trim().toLowerCase();
+    const password = formData.password;
+
+    // Validation
+    if (!name || !email || !password) {
       setErrorMsg("All fields are required.");
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       setErrorMsg("Password must be at least 6 characters.");
       return;
     }
@@ -52,24 +90,45 @@ function Register() {
     setSuccessMsg("");
 
     try {
+      console.log("Registering user:", email);
+
       const data = await authAPI.register(
-        formData.name.trim(),
-        formData.email.trim(),
-        formData.password
+        name,
+        email,
+        password
       );
 
-      setSuccessMsg(data.message || "Registration successful! Redirecting to login...");
+      console.log("Registration response:", data);
+
+      setSuccessMsg(
+        data?.message ||
+        "Registration successful! Redirecting to login..."
+      );
+
+      // Redirect after successful registration
       setTimeout(() => {
         navigate("/login");
       }, 1000);
     } catch (error) {
       console.error("Registration error:", error);
-      const serverMessage =
-        error.response?.data?.message ||
-        (error.message === "Network Error"
-          ? `Network error: Backend at ${getApiBaseUrl()} is unreachable. (If hosted on Render, please allow 30s for cold-start wake up).`
-          : "Registration failed. Please try again.");
-      setErrorMsg(serverMessage);
+
+      if (error.response) {
+        // Backend returned an error
+        setErrorMsg(
+          error.response.data?.message ||
+          `Registration failed (${error.response.status}).`
+        );
+      } else if (error.request) {
+        // Request was sent but server didn't respond
+        setErrorMsg(
+          `Cannot connect to backend. Please make sure the server is running at ${getApiBaseUrl()}.`
+        );
+      } else {
+        // Something else went wrong
+        setErrorMsg(
+          error.message || "Registration failed. Please try again."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -79,14 +138,19 @@ function Register() {
 
   return (
     <div className="auth-page-container">
-      <div className="auth-card glass-panel">
+      <SylvaScene />
+      <div className="auth-card glass-panel" style={{ position: "relative", zIndex: 1 }}>
         <div className="auth-header">
           <div className="auth-badge badge badge-cyan">
             <span>🚀</span>
             <span>Join SkillSprint</span>
           </div>
+
           <h1>Create Your Account</h1>
-          <p>Start mastering production full-stack engineering today.</p>
+
+          <p>
+            Start mastering production full-stack engineering today.
+          </p>
         </div>
 
         {errorMsg && (
@@ -103,13 +167,23 @@ function Register() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="auth-form" noValidate>
+        <form
+          onSubmit={handleSubmit}
+          className="auth-form"
+          noValidate
+        >
+          {/* NAME */}
           <div className="form-group">
-            <label className="form-label" htmlFor="reg-name">
+            <label
+              className="form-label"
+              htmlFor="reg-name"
+            >
               Full Name
             </label>
+
             <div className="input-wrapper">
               <span className="input-icon">👤</span>
+
               <input
                 id="reg-name"
                 type="text"
@@ -119,17 +193,24 @@ function Register() {
                 placeholder="e.g. Alex Chen"
                 value={formData.name}
                 onChange={handleChange}
+                disabled={isLoading}
                 required
               />
             </div>
           </div>
 
+          {/* EMAIL */}
           <div className="form-group">
-            <label className="form-label" htmlFor="reg-email">
+            <label
+              className="form-label"
+              htmlFor="reg-email"
+            >
               Email Address
             </label>
+
             <div className="input-wrapper">
               <span className="input-icon">✉️</span>
+
               <input
                 id="reg-email"
                 type="email"
@@ -139,17 +220,24 @@ function Register() {
                 placeholder="alex@example.com"
                 value={formData.email}
                 onChange={handleChange}
+                disabled={isLoading}
                 required
               />
             </div>
           </div>
 
+          {/* PASSWORD */}
           <div className="form-group">
-            <label className="form-label" htmlFor="reg-pwd">
+            <label
+              className="form-label"
+              htmlFor="reg-pwd"
+            >
               Password
             </label>
+
             <div className="input-wrapper">
               <span className="input-icon">🔒</span>
+
               <input
                 id="reg-pwd"
                 type={showPassword ? "text" : "password"}
@@ -159,13 +247,22 @@ function Register() {
                 placeholder="Minimum 6 characters"
                 value={formData.password}
                 onChange={handleChange}
+                disabled={isLoading}
                 required
               />
+
               <button
                 type="button"
                 className="pwd-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                title={showPassword ? "Hide password" : "Show password"}
+                onClick={() =>
+                  setShowPassword((prev) => !prev)
+                }
+                title={
+                  showPassword
+                    ? "Hide password"
+                    : "Show password"
+                }
+                disabled={isLoading}
               >
                 {showPassword ? "🙈" : "👁️"}
               </button>
@@ -180,18 +277,25 @@ function Register() {
                       className="pwd-step"
                       style={{
                         backgroundColor:
-                          strength.score >= step ? strength.color : "rgba(255,255,255,0.1)",
+                          strength.score >= step
+                            ? strength.color
+                            : "rgba(255, 255, 255, 0.1)",
                       }}
                     />
                   ))}
                 </div>
-                <span className="pwd-label" style={{ color: strength.color }}>
+
+                <span
+                  className="pwd-label"
+                  style={{ color: strength.color }}
+                >
                   {strength.label}
                 </span>
               </div>
             )}
           </div>
 
+          {/* SUBMIT */}
           <button
             type="submit"
             className="btn btn-primary btn-full"
@@ -211,8 +315,11 @@ function Register() {
         <div className="auth-footer">
           <p>
             Already have an account?{" "}
-            <Link to="/login" className="auth-switch-link">
-              Sign In &rarr;
+            <Link
+              to="/login"
+              className="auth-switch-link"
+            >
+              Sign In →
             </Link>
           </p>
         </div>
@@ -220,7 +327,9 @@ function Register() {
 
       <style>{`
         .auth-page-container {
+          position: relative;
           min-height: calc(100vh - 68px);
+          height: calc(100vh - 68px);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -237,13 +346,18 @@ function Register() {
         }
 
         .auth-card::before {
-          content: '';
+          content: "";
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
           height: 3px;
-          background: linear-gradient(90deg, #06b6d4, #6366f1, #10b981);
+          background: linear-gradient(
+            90deg,
+            #10b981,
+            #34d399,
+            #14b8a6
+          );
         }
 
         .auth-header {
@@ -280,6 +394,11 @@ function Register() {
 
         .pwd-toggle:hover {
           opacity: 1;
+        }
+
+        .pwd-toggle:disabled {
+          cursor: not-allowed;
+          opacity: 0.4;
         }
 
         .pwd-meter {

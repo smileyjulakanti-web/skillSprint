@@ -47,7 +47,7 @@ function Navbar({ onOpenBackendModal }) {
   const getStatusColor = () => {
     if (backendStatus === "live") return "#10b981";
     if (backendStatus === "checking") return "#f59e0b";
-    return "#ef4444";
+    return "#168672ff";
   };
 
   const getStatusText = () => {
@@ -59,30 +59,39 @@ function Navbar({ onOpenBackendModal }) {
   return (
     <header className="navbar-container">
       <div className="navbar-inner">
-        <Link to={user ? "/dashboard" : "/login"} className="brand-logo">
-          <div className="logo-icon-wrap">
-            <span className="logo-bolt">⚡</span>
-          </div>
-          <span className="logo-title">
-            Skill<span>Sprint</span>
-          </span>
-          <span className="logo-version">v1.0</span>
-        </Link>
+        <div className="navbar-left">
+          <Link to={user ? "/dashboard" : "/login"} className="brand-logo">
+            <div className="logo-icon-wrap">
+              <span className="logo-bolt">⚡</span>
+            </div>
+            <span className="logo-title">
+              Skill<span>Sprint</span>
+            </span>
+            <span className="logo-version">v1.0</span>
+          </Link>
+
+          <nav className="navbar-nav-links">
+            {user && (
+              <Link
+                to="/dashboard"
+                className={`nav-link ${location.pathname === "/dashboard" ? "active" : ""
+                  }`}
+              >
+                Dashboard
+              </Link>
+            )}
+            <Link
+              to="/courses"
+              className={`nav-link ${location.pathname.startsWith("/courses") ? "active" : ""
+                }`}
+            >
+              Courses
+            </Link>
+          </nav>
+        </div>
 
         <div className="navbar-right">
-          {/* Backend Status Indicator */}
-          <button
-            type="button"
-            className="api-status-btn"
-            onClick={onOpenBackendModal}
-            title={`Active API: ${getApiBaseUrl()} - Click to configure or test`}
-          >
-            <span
-              className="status-dot"
-              style={{ backgroundColor: getStatusColor() }}
-            />
-            <span className="status-label">{getStatusText()}</span>
-          </button>
+          {/* Backend Status Indicator Removed */}
 
           {user ? (
             <div className="user-nav-actions">
@@ -126,7 +135,7 @@ function Navbar({ onOpenBackendModal }) {
           position: sticky;
           top: 0;
           z-index: 100;
-          background: rgba(7, 9, 14, 0.85);
+          background: rgba(15, 139, 98, 0.85);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           border-bottom: 1px solid var(--border-subtle);
@@ -142,6 +151,47 @@ function Navbar({ onOpenBackendModal }) {
           justify-content: space-between;
         }
 
+        .navbar-left {
+          display: flex;
+          align-items: center;
+          gap: 28px;
+        }
+
+        .navbar-nav-links {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+        }
+
+        .nav-link {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: var(--text-secondary);
+          text-decoration: none;
+          transition: color 0.2s ease;
+          position: relative;
+          padding: 6px 2px;
+        }
+
+        .nav-link:hover {
+          color: var(--text-primary);
+        }
+
+        .nav-link.active {
+          color: var(--text-primary);
+        }
+
+        .nav-link.active::after {
+          content: "";
+          position: absolute;
+          bottom: -4px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, #10b981, #14b8a6);
+          border-radius: 2px;
+        }
+
         .brand-logo {
           display: flex;
           align-items: center;
@@ -152,12 +202,12 @@ function Navbar({ onOpenBackendModal }) {
         .logo-icon-wrap {
           width: 38px;
           height: 38px;
-          background: linear-gradient(135deg, #6366f1, #06b6d4);
+          background: linear-gradient(135deg, #10b981, #14b8a6);
           border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+          box-shadow: 0 0 15px rgba(17, 164, 108, 0.4);
         }
 
         .logo-bolt {
@@ -168,19 +218,19 @@ function Navbar({ onOpenBackendModal }) {
           font-family: var(--font-display);
           font-size: 1.35rem;
           font-weight: 800;
-          color: #fff;
+          color: var(--text-primary);
           letter-spacing: -0.02em;
         }
 
         .logo-title span {
-          background: linear-gradient(135deg, #818cf8 0%, #06b6d4 100%);
+          background: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
 
         .logo-version {
           font-size: 0.65rem;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(23, 147, 50, 0.08);
           padding: 2px 6px;
           border-radius: 4px;
           color: var(--text-muted);
@@ -194,24 +244,10 @@ function Navbar({ onOpenBackendModal }) {
           gap: 16px;
         }
 
-        .api-status-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: rgba(15, 23, 42, 0.6);
-          border: 1px solid var(--border-subtle);
-          padding: 6px 12px;
-          border-radius: 20px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-        }
-
-        .api-status-btn:hover {
-          border-color: rgba(255, 255, 255, 0.2);
-          background: rgba(20, 29, 50, 0.85);
-          color: var(--text-primary);
+        .navbar-container .btn {
+          background: lightgreen !important;
+          color: black !important;
+          border: none;
         }
 
         .status-dot {
@@ -233,7 +269,7 @@ function Navbar({ onOpenBackendModal }) {
           gap: 10px;
           padding: 4px 10px 4px 4px;
           border-radius: 30px;
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(13, 171, 65, 0.04);
           border: 1px solid var(--border-subtle);
         }
 
@@ -241,7 +277,7 @@ function Navbar({ onOpenBackendModal }) {
           width: 32px;
           height: 32px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #6366f1, #ec4899);
+          background: linear-gradient(135deg, #10b981, #34d399);
           display: flex;
           align-items: center;
           justify-content: center;
