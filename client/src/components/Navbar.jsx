@@ -80,6 +80,14 @@ function Navbar({ onOpenBackendModal }) {
                 Dashboard
               </Link>
             )}
+            {user && (
+              <Link
+                to="/my-course"
+                className={`nav-link ${location.pathname === "/my-course" ? "active" : ""}`}
+              >
+                My Course
+              </Link>
+            )}
             <Link
               to="/courses"
               className={`nav-link ${location.pathname.startsWith("/courses") ? "active" : ""

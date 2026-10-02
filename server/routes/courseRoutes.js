@@ -92,6 +92,7 @@ router.get("/enrolled", authMiddleware, async (req, res) => {
       completed: e.completed,
       completedLessons: e.completedLessons,
       lastAccessedLesson: e.lastAccessedLesson,
+      status: e.status,
     }));
 
     res.json({
@@ -146,15 +147,43 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Course not found." });
     }
 
+    // Check for an existing active enrollment for THIS user
+    const activeEnrollment = await Enrollment.findOne({
+      userId: req.user.userId,
+      status: "active",
+    }).populate("courseId");
+
+    if (activeEnrollment) {
+      if (activeEnrollment.courseId._id.toString() === course._id.toString()) {
+        return res.status(200).json({
+          message: "You are already actively enrolled in this course.",
+          enrollment: activeEnrollment,
+          course,
+        });
+      }
+      return res.status(400).json({
+        message: "You are already enrolled in a course.",
+        courseId: activeEnrollment.courseId._id,
+        courseTitle: activeEnrollment.courseId.title,
+      });
+    }
+
     let enrollment = await Enrollment.findOne({
       userId: req.user.userId,
       courseId: course._id,
     });
 
-    if (!enrollment) {
+    if (enrollment) {
+      if (enrollment.status === "completed") {
+        return res.status(400).json({ message: "You have already completed this course." });
+      }
+      enrollment.status = "active";
+      await enrollment.save();
+    } else {
       enrollment = await Enrollment.create({
         userId: req.user.userId,
         courseId: course._id,
+        status: "active",
         progress: 0,
         completed: false,
         lastAccessedLesson: 1,
@@ -256,6 +285,8 @@ router.post(
 
       if (enrollment.progress >= 100) {
         enrollment.completed = true;
+        enrollment.status = "completed";
+        enrollment.completedAt = new Date();
       }
 
       await enrollment.save();

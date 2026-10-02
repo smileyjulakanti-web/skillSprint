@@ -297,7 +297,7 @@ function Dashboard({ onOpenBackendModal }) {
         <div className="section-title-row">
           <div>
             <h2>📚 My Learning</h2>
-            <p>Courses you are currently enrolled in and mastering.</p>
+            <p>Your current active track and completed courses.</p>
           </div>
           <Link to="/courses" className="btn btn-subtle btn-sm">
             Explore All Courses &rarr;
@@ -309,73 +309,89 @@ function Dashboard({ onOpenBackendModal }) {
             <span className="spinner" />
             <span>Loading your courses...</span>
           </div>
-        ) : enrolledCourses.length === 0 ? (
-          <div className="empty-learning-card glass-panel">
-            <div className="empty-learning-left">
-              <span className="empty-icon">🎓</span>
-              <div>
-                <h3>No enrolled courses yet</h3>
-                <p>
-                  Choose a full curriculum course to start tracking your lesson progress and earning certificates.
-                </p>
-              </div>
-            </div>
-            <Link to="/courses" className="btn btn-primary btn-sm">
-              Explore Courses ⚡
-            </Link>
-          </div>
         ) : (
-          <div className="learning-cards-grid">
-            {enrolledCourses.map((item) => {
-              const c = item.course;
-              if (!c) return null;
+          (() => {
+            const activeCourseItem = enrolledCourses.find(c => c.status === "active" || (!c.status && !c.completed));
+            const completedCourses = enrolledCourses.filter(c => c.status === "completed" || c.completed);
+            
+            if (!activeCourseItem && completedCourses.length === 0) {
               return (
-                <div
-                  key={item.enrollmentId || c._id}
-                  className="learning-card glass-panel"
-                >
-                  <div className="learning-card-top">
-                    <span className="badge badge-cyan">
-                      {c.category || "Course"}
-                    </span>
-                    <span className="badge badge-indigo">
-                      {c.level || "Beginner"}
-                    </span>
-                    {item.completed && (
-                      <span className="badge badge-emerald">🎉 Completed</span>
-                    )}
-                  </div>
-
-                  <h3>{c.title}</h3>
-                  <p className="learning-desc">{c.description}</p>
-
-                  <div className="learning-progress-wrap">
-                    <div className="progress-info-row">
-                      <span>Progress</span>
-                      <span className="pct-val">{item.progress || 0}%</span>
+                <div className="empty-learning-card glass-panel">
+                  <div className="empty-learning-left">
+                    <span className="empty-icon">🎓</span>
+                    <div>
+                      <h3>No active course yet</h3>
+                      <p>Choose a full curriculum course to start tracking your lesson progress and earning certificates.</p>
                     </div>
-                    <div className="progress-bar-bg">
-                      <div
-                        className="progress-bar-fill"
-                        style={{ width: `${item.progress || 0}%` }}
-                      />
-                    </div>
-                    <span className="completed-lessons-lbl">
-                      {item.completedLessons?.length || 0} of{" "}
-                      {c.totalLessons || c.lessons?.length || 10} lessons completed
-                    </span>
                   </div>
-
-                  <Link
-                    to={`/courses/${c._id}/learn`}
-                    className="btn btn-primary btn-sm btn-full"
-                  >
-                    Continue Learning &rarr;
+                  <Link to="/courses" className="btn btn-primary btn-sm">
+                    Explore Courses ⚡
                   </Link>
                 </div>
               );
-            })}
-          </div>
+            }
+
+            return (
+              <div className="learning-cards-grid" style={{ gridTemplateColumns: activeCourseItem ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+                {/* Active Course */}
+                {activeCourseItem && activeCourseItem.course && (() => {
+                  const c = activeCourseItem.course;
+                  return (
+                    <div key={activeCourseItem.enrollmentId || c._id} className="learning-card glass-panel" style={{ border: '2px solid var(--primary)', backgroundColor: 'var(--bg-card-hover)' }}>
+                      <div className="learning-card-top">
+                        <span className="badge badge-emerald">Active Focus</span>
+                        <span className="badge badge-cyan">{c.category || "Course"}</span>
+                        <span className="badge badge-indigo">{c.level || "Beginner"}</span>
+                      </div>
+                      <h3>{c.title}</h3>
+                      <p className="learning-desc">{c.description}</p>
+                      <div className="learning-progress-wrap" style={{ marginTop: '1rem' }}>
+                        <div className="progress-info-row">
+                          <span>Progress</span>
+                          <span className="pct-val">{activeCourseItem.progress || 0}%</span>
+                        </div>
+                        <div className="progress-bar-bg" style={{ height: '10px' }}>
+                          <div
+                            className="progress-bar-fill"
+                            style={{ width: `${activeCourseItem.progress || 0}%` }}
+                          />
+                        </div>
+                        <span className="completed-lessons-lbl">
+                          {activeCourseItem.completedLessons?.length || 0} of {c.totalLessons || c.lessons?.length || 10} lessons completed
+                        </span>
+                      </div>
+                      <Link
+                        to={`/courses/${c._id}/learn`}
+                        className="btn btn-primary btn-sm btn-full"
+                        style={{ marginTop: '1.5rem', padding: '12px' }}
+                      >
+                        Continue Learning &rarr;
+                      </Link>
+                    </div>
+                  );
+                })()}
+
+                {/* Completed Courses */}
+                {completedCourses.map((item) => {
+                  const c = item.course;
+                  if (!c) return null;
+                  return (
+                    <div key={item.enrollmentId || c._id} className="learning-card glass-panel" style={{ opacity: 0.9 }}>
+                      <div className="learning-card-top">
+                        <span className="badge badge-cyan">{c.category || "Course"}</span>
+                        <span className="badge badge-emerald">🎉 Completed</span>
+                      </div>
+                      <h3>{c.title}</h3>
+                      <p className="learning-desc" style={{ fontSize: '0.85rem' }}>{c.description}</p>
+                      <Link to={`/courses/${c._id}/learn`} className="btn btn-secondary btn-sm btn-full" style={{ marginTop: '1rem' }}>
+                        Review Material
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()
         )}
       </section>
 

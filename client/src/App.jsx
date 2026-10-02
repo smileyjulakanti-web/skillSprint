@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import CourseList from "./pages/CourseList";
 import CourseDetails from "./pages/CourseDetails";
 import LearnCourse from "./pages/LearnCourse";
+import MyCourse from "./pages/MyCourse";
+import Quiz from "./pages/Quiz";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -39,6 +41,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LearnCourse />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-course"
+              element={
+                <ProtectedRoute>
+                  <MyCourse />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/courses/:id/quiz"
+              element={
+                <ProtectedRoute>
+                  <Quiz />
                 </ProtectedRoute>
               }
             />

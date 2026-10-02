@@ -32,6 +32,14 @@ const enrollmentSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: String,
+      enum: ["active", "completed", "dropped"],
+      default: "active",
+    },
+    completedAt: {
+      type: Date,
+    },
     lastAccessedLesson: {
       type: Number,
       default: 1,
@@ -44,5 +52,11 @@ const enrollmentSchema = new mongoose.Schema(
 
 // Ensure a user can only have one enrollment per course
 enrollmentSchema.index({ userId: 1, courseId: 1 }, { unique: true });
+
+// CRITICAL RULE: A user can only have ONE active course at a time
+enrollmentSchema.index(
+  { userId: 1, status: 1 },
+  { unique: true, partialFilterExpression: { status: "active" } }
+);
 
 module.exports = mongoose.model("Enrollment", enrollmentSchema);

@@ -17,6 +17,7 @@ function CourseList() {
   const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+  const [activeCourseConflict, setActiveCourseConflict] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState(null);
@@ -59,7 +60,16 @@ function CourseList() {
       navigate(`/courses/${course._id}/learn`);
     } catch (err) {
       console.error("Enrollment failed:", err);
-      alert("Unable to enroll in course. Please try again.");
+      if (err.response?.status === 400 && err.response?.data?.courseId) {
+        setActiveCourseConflict({
+          courseId: err.response.data.courseId,
+          courseTitle: err.response.data.courseTitle,
+          message: err.response.data.message,
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        alert(err.response?.data?.message || "Unable to enroll in course. Please try again.");
+      }
     } finally {
       setActionLoadingId(null);
     }
@@ -126,6 +136,20 @@ function CourseList() {
           </div>
         </div>
       </section>
+
+      {/* Conflict State */}
+      {activeCourseConflict && (
+        <div className="alert-banner error" style={{ margin: "20px 0", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "10px", padding: "20px" }}>
+          <div>
+            <strong>Enrollment Rejected: </strong>
+            {activeCourseConflict.message}
+          </div>
+          <div>You are already actively enrolled in: <strong>{activeCourseConflict.courseTitle}</strong></div>
+          <Link to={`/courses/${activeCourseConflict.courseId}/learn`} className="btn btn-primary btn-sm">
+            Go to Current Course
+          </Link>
+        </div>
+      )}
 
       {/* Loading & Error States */}
       {isLoading && (
