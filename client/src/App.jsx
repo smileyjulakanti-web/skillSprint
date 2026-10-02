@@ -11,6 +11,11 @@ import CourseDetails from "./pages/CourseDetails";
 import LearnCourse from "./pages/LearnCourse";
 import MyCourse from "./pages/MyCourse";
 import Quiz from "./pages/Quiz";
+import LearningProfile from "./pages/LearningProfile";
+import SkillDiagnostic from "./pages/SkillDiagnostic";
+import SkillGap from "./pages/SkillGap";
+import SprintLesson from "./pages/SprintLesson";
+import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -33,6 +38,14 @@ function App() {
                   onOpenBackendModal={() => setIsBackendModalOpen(true)}
                 />
               }
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } 
             />
             <Route path="/courses" element={<CourseList />} />
             <Route path="/courses/:id" element={<CourseDetails />} />
@@ -57,6 +70,38 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Quiz />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/learning-profile"
+              element={
+                <ProtectedRoute>
+                  <LearningProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/skill-diagnostic"
+              element={
+                <ProtectedRoute>
+                  <SkillDiagnostic />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/skill-gap"
+              element={
+                <ProtectedRoute>
+                  <SkillGap />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/learn/:sprintId/day/:dayId"
+              element={
+                <ProtectedRoute>
+                  <SprintLesson />
                 </ProtectedRoute>
               }
             />

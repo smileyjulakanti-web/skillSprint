@@ -56,7 +56,7 @@ function Register() {
       return {
         score: 3,
         label: "Strong",
-        color: "#10b981",
+        color: "var(--status-success)",
       };
     }
 
@@ -351,13 +351,7 @@ function Register() {
           top: 0;
           left: 0;
           right: 0;
-          height: 3px;
-          background: linear-gradient(
-            90deg,
-            #10b981,
-            #34d399,
-            #14b8a6
-          );
+          background: var(--gradient-primary);
         }
 
         .auth-header {

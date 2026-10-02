@@ -17,10 +17,25 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
+    profileImage: {
+      type: String,
+      default: "",
+    },
+    
+    education: {
+      type: String,
+      default: "",
+    },
+    
+    about: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
   },
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.models.User || mongoose.model("User", userSchema);

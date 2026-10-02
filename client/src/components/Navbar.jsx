@@ -17,7 +17,8 @@ function Navbar({ onOpenBackendModal }) {
   };
 
   const user = getUserFromStorage();
-  const [backendStatus, setBackendStatus] = useState("checking"); // checking, live, offline
+  const [backendStatus, setBackendStatus] = useState("checking");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -45,9 +46,9 @@ function Navbar({ onOpenBackendModal }) {
   };
 
   const getStatusColor = () => {
-    if (backendStatus === "live") return "#10b981";
-    if (backendStatus === "checking") return "#f59e0b";
-    return "#168672ff";
+    if (backendStatus === "live") return "var(--status-success)";
+    if (backendStatus === "checking") return "var(--status-warning)";
+    return "var(--status-error)";
   };
 
   const getStatusText = () => {
@@ -88,13 +89,14 @@ function Navbar({ onOpenBackendModal }) {
                 My Course
               </Link>
             )}
-            <Link
-              to="/courses"
-              className={`nav-link ${location.pathname.startsWith("/courses") ? "active" : ""
-                }`}
-            >
-              Courses
-            </Link>
+            {user && (
+              <Link
+                to="/courses"
+                className={`nav-link ${location.pathname.startsWith("/courses") ? "active" : ""}`}
+              >
+                Courses
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -102,24 +104,58 @@ function Navbar({ onOpenBackendModal }) {
           {/* Backend Status Indicator Removed */}
 
           {user ? (
-            <div className="user-nav-actions">
-              <div className="user-profile-badge">
+            <div className="user-nav-actions" style={{ position: 'relative' }}>
+              <div 
+                className="user-profile-badge" 
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
                 <div className="user-avatar">
                   {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                 </div>
                 <div className="user-info-text">
                   <span className="user-name">{user.name || "Sprint Learner"}</span>
-                  <span className="user-role">Developer</span>
+                  <span className="dropdown-arrow" style={{ fontSize: '10px', marginLeft: '4px' }}>▼</span>
                 </div>
               </div>
 
-              <button
-                onClick={handleLogout}
-                className="btn btn-secondary btn-sm"
-                title="Sign out of SkillSprint"
-              >
-                Sign Out
-              </button>
+              {dropdownOpen && (
+                <>
+                  <div 
+                    className="dropdown-overlay" 
+                    onClick={() => setDropdownOpen(false)}
+                    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 90 }}
+                  ></div>
+                  <div className="profile-dropdown" style={{
+                    position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                    background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)', padding: '0.5rem',
+                    minWidth: '220px', zIndex: 100, boxShadow: 'var(--shadow-md)'
+                  }}>
+                    <div className="dropdown-header" style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-subtle)', marginBottom: '0.5rem' }}>
+                      <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>🟢 {user.name}</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{user.email}</div>
+                    </div>
+                    
+                    <Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                      👤 My Profile
+                    </Link>
+                    <Link to="/dashboard" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                      📊 My Progress
+                    </Link>
+                    
+                    <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '0.5rem 0' }}></div>
+                    
+                    <button 
+                      onClick={handleLogout} 
+                      className="dropdown-item" 
+                      style={{ width: '100%', textAlign: 'left', color: 'var(--status-error)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                    >
+                      🚪 Logout
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="auth-nav-links">
@@ -143,9 +179,7 @@ function Navbar({ onOpenBackendModal }) {
           position: sticky;
           top: 0;
           z-index: 100;
-          background: rgba(15, 139, 98, 0.85);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
+          background: var(--bg-main);
           border-bottom: 1px solid var(--border-subtle);
           padding: 0 1.5rem;
         }
@@ -196,7 +230,7 @@ function Navbar({ onOpenBackendModal }) {
           left: 0;
           right: 0;
           height: 2px;
-          background: linear-gradient(90deg, #10b981, #14b8a6);
+          background: var(--gradient-primary);
           border-radius: 2px;
         }
 
@@ -210,7 +244,7 @@ function Navbar({ onOpenBackendModal }) {
         .logo-icon-wrap {
           width: 38px;
           height: 38px;
-          background: linear-gradient(135deg, #10b981, #14b8a6);
+          background: var(--gradient-primary);
           border-radius: 10px;
           display: flex;
           align-items: center;
@@ -231,7 +265,7 @@ function Navbar({ onOpenBackendModal }) {
         }
 
         .logo-title span {
-          background: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
+          background: var(--gradient-primary);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -285,7 +319,7 @@ function Navbar({ onOpenBackendModal }) {
           width: 32px;
           height: 32px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #10b981, #34d399);
+          background: var(--gradient-primary);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -317,6 +351,20 @@ function Navbar({ onOpenBackendModal }) {
           display: flex;
           align-items: center;
           gap: 10px;
+        }
+
+        .dropdown-item {
+          display: block;
+          padding: 0.75rem 1rem;
+          color: var(--text-primary);
+          text-decoration: none;
+          font-size: 0.95rem;
+          border-radius: var(--radius-sm);
+          transition: background 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+          background: rgba(16, 185, 129, 0.12);
         }
 
         @media (max-width: 640px) {

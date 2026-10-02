@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const authMiddleware = require("../middleware/auth");
+const LearningProfile = require("../models/learningProfile");
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "skillsprint_secret_key";
@@ -95,6 +96,9 @@ router.post("/login", async (req, res) => {
       }
     );
 
+    // Check for learning profile
+    const profile = await LearningProfile.findOne({ userId: user._id });
+    
     res.json({
       message: "Login successful",
       token,
@@ -102,6 +106,8 @@ router.post("/login", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        hasProfile: !!profile,
+        diagnosticCompleted: profile?.diagnosticCompleted || false,
       },
     });
   } catch (error) {
@@ -124,12 +130,17 @@ router.get("/me", authMiddleware, async (req, res) => {
       });
     }
 
+    // Check for learning profile
+    const profile = await LearningProfile.findOne({ userId: user._id });
+
     res.json({
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         createdAt: user.createdAt,
+        hasProfile: !!profile,
+        diagnosticCompleted: profile?.diagnosticCompleted || false,
       },
     });
   } catch (error) {

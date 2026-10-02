@@ -48,7 +48,15 @@ function Login() {
 
       setSuccessMsg("Login successful! Redirecting...");
       setTimeout(() => {
-        const dest = location.state?.from?.pathname || "/dashboard";
+        let dest = location.state?.from?.pathname || "/dashboard";
+        
+        // Check profile completion status for onboarding
+        if (!data.user.hasProfile) {
+          dest = "/learning-profile";
+        } else if (!data.user.diagnosticCompleted) {
+          dest = "/skill-diagnostic";
+        }
+        
         navigate(dest);
       }, 600);
     } catch (error) {
@@ -219,8 +227,7 @@ function Login() {
           top: 0;
           left: 0;
           right: 0;
-          height: 3px;
-          background: linear-gradient(90deg, #10b981, #14b8a6, #34d399);
+          background: var(--gradient-primary);
         }
 
         .auth-header {

@@ -115,4 +115,42 @@ export const courseAPI = {
   },
 };
 
+export const learningProfileAPI = {
+  getProfile: async () => {
+    const response = await api.get("/api/learning-profile");
+    return response.data;
+  },
+
+  saveProfile: async (profileData) => {
+    const response = await api.post("/api/learning-profile", profileData);
+    return response.data;
+  },
+};
+
+export const sprintAPI = {
+  generateSprint: async (targetSkill, duration) => {
+    const response = await api.post("/api/sprint/generate", { targetSkill, duration });
+    return response.data;
+  },
+  getCurrentSprint: async () => {
+    const response = await api.get("/api/sprint/current");
+    return response.data;
+  },
+  completeDay: async (sprintId, dayId) => {
+    const response = await api.post(`/api/sprint/${sprintId}/complete-day/${dayId}`);
+    return response.data;
+  }
+};
+
+export const profileAPI = {
+  getProfile: async () => {
+    const response = await api.get("/api/profile");
+    return response.data;
+  },
+  updateProfile: async (profileData) => {
+    const response = await api.put("/api/profile", profileData);
+    return response.data;
+  }
+};
+
 export default api;
