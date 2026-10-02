@@ -22,7 +22,9 @@ const MONGO_URI =
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://skill-sprint-eight-kappa.vercel.app"
+  "https://skill-sprint-eight-kappa.vercel.app",
+  "https://skill-sprint-jqzx0127b-julakanti-smileys-projects.vercel.app",
+  "https://skillsprint.vercel.app"
 ];
 
 app.use(
